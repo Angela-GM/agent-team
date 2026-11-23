@@ -58,6 +58,53 @@ Claude aparece como coautor de los commits a propósito: el enunciado pide usar 
 ### Fase 4 – Publicación
 - Proyecto en Vercel conectado al repositorio y prueba de punta a punta contra la URL de producción.
 
+## Las tres piezas clave de la arquitectura
+
+### 1. Por qué los agentes trabajan paso a paso
+
+**El problema.** Una petición completa (planificar, desarrollar y revisar varias tareas, con reintentos) puede tardar entre 1 y 5 minutos, porque cada llamada al modelo tarda de 2 a 45 segundos. En el plan gratuito de Vercel una función de servidor tiene un tiempo máximo; si hiciera todo el trabajo en una sola llamada, Vercel la cortaría a medias y se perdería el progreso.
+
+**La solución.** Partí el trabajo en pasos cortos. Cada llamada a `/api/runs/[id]/step` hace **una sola acción** (el Orquestador planifica, Develop escribe una tarea o Testing revisa una tarea), guarda el resultado en Supabase y termina. El navegador pide el siguiente paso, y así hasta acabar.
+
+**Lo que se gana:**
+- Ningún paso se acerca al límite de tiempo: cada uno tiene un presupuesto de 100 s y la función admite 120 s.
+- Todo el estado vive en la base de datos (tareas, intentos, código propuesto, fallos de Testing). Si se cierra la pestaña, la petición se queda en pausa y continúa al volver a abrirla, sin perder nada.
+- La pantalla se actualiza en directo porque escucha los cambios de la base de datos con Supabase Realtime.
+- Un bloqueo en la base de datos (`claim_run_step`) impide que dos pestañas ejecuten el mismo paso a la vez.
+
+**El límite que asumo:** el bucle avanza mientras haya una pestaña abierta. Para que avanzara solo en el servidor haría falta una cola de trabajos o tareas programadas, que en el plan gratuito de Vercel están muy limitadas.
+
+### 2. Las dos capas de Testing
+
+Testing no se fía solo de la IA. Revisa en dos capas y la tarea solo se aprueba si pasa **las dos**:
+
+1. **Comprobaciones automáticas, sin IA** (`src/lib/agents/checks.ts`). Son reglas fijas que siempre dan el mismo resultado:
+   - Estructura HTML completa (`doctype`, `lang`, `title`, `viewport`, cierre de la página).
+   - Enlaces rotos: cada `href` o `src` interno tiene que apuntar a un archivo que exista.
+   - Accesibilidad de formularios: cada campo tiene su `<label>` o un `aria-label`.
+   - JavaScript sin errores de sintaxis (se compila, pero no se ejecuta).
+   - Archivos completos, sin «...» ni código omitido.
+2. **Revisión con el modelo** contra los **criterios de aceptación** que escribe el Orquestador al planificar cada tarea. Comprueba lo que una regla fija no puede: si la página de contacto tiene de verdad lo que se pidió o si se ha roto algo que ya funcionaba.
+
+**Por qué así:** un modelo puede dar por bueno algo que está mal; una regla fija no se equivoca, pero no entiende la intención. Juntas se cubren mutuamente. En la primera prueba real, las reglas detectaron un enlace a una página que aún no existía y la IA detectó un selector CSS roto.
+
+Si Testing rechaza, la tarea vuelve a Develop **con la lista de fallos**, y Develop los corrige en el siguiente intento. El tope son 5 intentos por tarea.
+
+### 3. La cadena de modelos y el respaldo
+
+**El problema.** Uso modelos gratuitos y, al probarlos, vi que no siempre responden: a veces devuelven «demasiada demanda» (error 503), uno ya no estaba disponible para cuentas nuevas y otro se quedaba colgado. Si la app dependiera de un único modelo, la demo podría fallar justo cuando la abre el evaluador.
+
+**La solución.** Cada llamada recorre una cadena hasta que alguien responde:
+
+1. `gemini-3.5-flash`
+2. `gemini-flash-latest`
+3. `gemini-flash-lite-latest`
+4. **Groq** (`openai/gpt-oss-120b`), otro proveedor gratuito, como último respaldo.
+
+Si fallan todos, el paso no se pierde: la pantalla muestra una cuenta atrás y se reintenta más tarde. Toda la cadena respeta el presupuesto de tiempo del paso, para no chocar con el límite de Vercel.
+
+**Cambiar de proveedor es configuración, no código:** todos los agentes llaman a una única función (`getLlm()` en `src/lib/llm/`) y el proveedor se elige con variables de entorno (`LLM_PROVIDER`, `GEMINI_MODELS`, `GROQ_MODEL`). Si mañana quisiera usar Claude por API, solo habría que añadir un proveedor más.
+
 ## Fallos encontrados al probar y cómo se resolvieron
 
 | Problema | Cómo apareció | Solución |
