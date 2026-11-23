@@ -15,6 +15,7 @@ export function NewRunForm() {
   const [request, setRequest] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
+  const [fresh, setFresh] = useState(false);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -23,7 +24,7 @@ export function NewRunForm() {
     const res = await fetch("/api/runs", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ request }),
+      body: JSON.stringify({ request, fresh }),
     });
     const json = await res.json().catch(() => ({}));
     setSending(false);
@@ -32,6 +33,7 @@ export function NewRunForm() {
       return;
     }
     setRequest("");
+    setFresh(false);
     router.push(`/runs/${json.id}`);
   }
 
@@ -62,6 +64,18 @@ export function NewRunForm() {
           </button>
         ))}
       </div>
+      <label className="flex items-start gap-2 text-sm text-muted">
+        <input
+          type="checkbox"
+          checked={fresh}
+          onChange={(e) => setFresh(e.target.checked)}
+          className="mt-0.5 accent-[var(--orchestrator)]"
+        />
+        <span>
+          Empezar desde la web original
+          <span className="block text-xs">Si no, se parte de cómo dejó la web la última petición.</span>
+        </span>
+      </label>
       {error && (
         <p role="alert" className="text-sm text-fail">
           {error}

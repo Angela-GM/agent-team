@@ -23,4 +23,6 @@ Claude Code ha sido el equipo de desarrollo para **construir** la app. Los agent
 - Vista previa de la web generada en un iframe con `sandbox` sin `allow-same-origin`: el código que escribe la IA no puede leer la sesión del usuario.
 - Para verificar la interfaz, Claude Code abrió la app en un navegador sin ventana (Playwright con Edge), hizo capturas en escritorio, móvil y modo oscuro, y las revisó. Así encontró y corrigió: contraste bajo en modo oscuro, la barra lateral empujando el contenido en el móvil y un fallo real del motor (si Develop no proponía cambios porque la web ya cumplía la tarea, se paraba toda la petición).
 
+- Al probar la app vi que cada petición empezaba desde la web original y se perdía lo anterior. Lo planteé y lo cambiamos: el enunciado habla de «añadir una página **a esta web**», así que ahora cada petición parte de la web que dejó la última petición terminada (solo código aprobado), con la opción de empezar desde la original.
+
 <!-- Sigue añadiendo aquí: qué pediste, qué corregiste tú, qué decidiste. -->

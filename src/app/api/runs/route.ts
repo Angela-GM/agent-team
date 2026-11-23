@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { getLatestWeb } from "@/lib/agents/latest-web";
 import { STARTER_SITE } from "@/lib/agents/starter-site";
 import { createClient } from "@/lib/supabase/server";
 
@@ -29,9 +30,14 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // El equipo trabaja sobre un proyecto que crece: cada petición parte de la web que
+  // dejó la última petición terminada (solo contiene código aprobado por Testing).
+  // Con fresh = true se empieza desde la web original.
+  const base = body.fresh ? null : await getLatestWeb(supabase);
+
   const { data, error } = await supabase
     .from("runs")
-    .insert({ request, files: STARTER_SITE })
+    .insert({ request, files: base?.files ?? STARTER_SITE })
     .select("id")
     .single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -40,7 +46,10 @@ export async function POST(req: NextRequest) {
     run_id: data.id,
     agent: "orchestrator",
     kind: "info",
-    message: `Petición recibida: «${request}»`,
+    message: base
+      ? `Petición recibida: «${request}». Parte de la web que dejó «${base.request}».`
+      : `Petición recibida: «${request}». Parte de la web original.`,
+    payload: base ? { base_run_id: base.id, base_request: base.request } : { base_run_id: null },
   });
 
   return NextResponse.json({ id: data.id }, { status: 201 });

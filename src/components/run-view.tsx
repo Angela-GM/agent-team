@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { useRun } from "@/hooks/use-run";
 import { useRunDriver, type DriverState } from "@/hooks/use-run-driver";
 import { AGENTS, RUN_STATUS } from "@/lib/agents/labels";
-import type { AgentName, Run, Task } from "@/lib/agents/types";
+import type { AgentEvent, AgentName, Run, Task } from "@/lib/agents/types";
 import { AgentPanel, type AgentActivity } from "./agent-panel";
 import { formatDuration } from "./format";
 import { ResultPanel } from "./result-panel";
@@ -31,7 +31,7 @@ export function RunView({ runId }: { runId: string }) {
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 p-4 md:p-6">
-      <RunHeader run={run} tasks={tasks} driver={driver} />
+      <RunHeader run={run} tasks={tasks} driver={driver} base={baseOf(events)} />
 
       <div className="grid gap-4 lg:grid-cols-3">
         {AGENTS.map((a) => (
@@ -86,7 +86,18 @@ function activityOf(agent: AgentName, run: Run, active: AgentName | null, hasEve
   return "waiting";
 }
 
-function RunHeader({ run, tasks, driver }: { run: Run; tasks: Task[]; driver: DriverState }) {
+type Base = { id: string; request: string } | null | undefined;
+
+// De qué web partió esta petición (lo guarda el primer evento al crearla).
+function baseOf(events: AgentEvent[]): Base {
+  const payload = events.find((e) => e.payload && "base_run_id" in e.payload)?.payload;
+  if (!payload) return undefined;
+  return payload.base_run_id
+    ? { id: String(payload.base_run_id), request: String(payload.base_request ?? "") }
+    : null;
+}
+
+function RunHeader({ run, tasks, driver, base }: { run: Run; tasks: Task[]; driver: DriverState; base: Base }) {
   const passed = tasks.filter((t) => t.status === "passed").length;
   const finished = run.status === "completed" || run.status === "failed";
   const statusColor =
@@ -107,6 +118,20 @@ function RunHeader({ run, tasks, driver }: { run: Run; tasks: Task[]; driver: Dr
         <DriverNote driver={driver} />
       </div>
       <h1 className="text-2xl leading-snug font-semibold text-balance md:text-3xl">{run.request}</h1>
+      {base !== undefined && (
+        <p className="text-sm text-muted">
+          {base ? (
+            <>
+              Parte de la web que dejó{" "}
+              <Link href={`/runs/${base.id}`} className="text-orchestrator underline">
+                «{base.request}»
+              </Link>
+            </>
+          ) : (
+            "Parte de la web original"
+          )}
+        </p>
+      )}
       {run.summary && <p className="max-w-3xl text-muted">{run.summary}</p>}
       {run.error && <p className="text-fail">Se ha detenido: {run.error}</p>}
     </header>

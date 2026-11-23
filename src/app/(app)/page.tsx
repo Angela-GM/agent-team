@@ -1,6 +1,5 @@
-import { ResultPanel } from "@/components/result-panel";
+import { CurrentWeb } from "@/components/current-web";
 import { AGENTS } from "@/lib/agents/labels";
-import { STARTER_SITE } from "@/lib/agents/starter-site";
 
 export default function Home() {
   return (
@@ -25,14 +24,7 @@ export default function Home() {
         ))}
       </ol>
 
-      <section aria-label="Web de partida">
-        <h2 className="mb-1 text-lg font-semibold">La web sobre la que trabajan</h2>
-        <p className="mb-3 text-sm text-muted">
-          Cada petición empieza desde esta web de ejemplo, de una panadería. Los agentes solo pueden tocar sus
-          archivos HTML, CSS y JavaScript.
-        </p>
-        <ResultPanel files={STARTER_SITE} events={[]} />
-      </section>
+      <CurrentWeb />
     </div>
   );
 }
