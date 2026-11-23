@@ -1,36 +1,52 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Agent Team
 
-## Getting Started
+Un equipo de 3 agentes de IA que trabajan juntos:
 
-First, run the development server:
+1. **Orquestador**: recibe una petición (p. ej. «añade una página de contacto»), la divide en tareas y las reparte.
+2. **Develop**: hace cada tarea y genera el código.
+3. **Testing**: revisa lo que ha hecho Develop y devuelve lo que falla, hasta que todo pasa (máx. 3 intentos por tarea).
+
+En pantalla se ve qué hace cada agente y en qué estado está cada tarea, en directo.
+
+## Stack
+
+- **Next.js 16** (App Router, Cache Components) + TypeScript + Tailwind
+- **Supabase**: Postgres, Auth (login) y Realtime (actualización en directo)
+- **Vercel**: despliegue
+- **LLM**: Gemini (plan gratuito); el proveedor se cambia con `LLM_PROVIDER`
+
+## Puesta en marcha en local
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+cp .env.example .env.local   # y rellena los valores
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+1. En Supabase, abre **SQL Editor** y ejecuta `supabase/migrations/0001_init.sql`.
+2. Crea el usuario de prueba:
+   ```bash
+   node --env-file=.env.local scripts/create-demo-user.mjs
+   ```
+3. Arranca:
+   ```bash
+   npm run dev
+   ```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Base de datos
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Tabla | Qué guarda |
+|---|---|
+| `runs` | Cada petición del usuario y su estado (`planning`, `running`, `completed`, `failed`) |
+| `tasks` | Las tareas del Orquestador: estado (`pending`, `developing`, `testing`, `passed`, `failed`), intentos, código y último informe de Testing |
+| `agent_events` | Registro de lo que hace cada agente; es lo que alimenta la pantalla |
 
-## Learn More
+Todas las tablas tienen RLS: cada usuario solo ve sus propias ejecuciones. El servidor actúa con la sesión del usuario, no con la service role key.
 
-To learn more about Next.js, take a look at the following resources:
+## Seguridad
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- Ninguna clave está en el repositorio (`.env*` está en `.gitignore`; solo se sube `.env.example`).
+- `SUPABASE_SERVICE_ROLE_KEY` solo se usa en local para crear el usuario de prueba. No va a Vercel.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Cómo se ha construido con Claude Code
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Ver [`docs/claude-code.md`](docs/claude-code.md).
