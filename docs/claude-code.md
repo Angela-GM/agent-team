@@ -17,4 +17,10 @@ Claude Code ha sido el equipo de desarrollo para **construir** la app. Los agent
 - Script `scripts/e2e-run.mjs` para probar el flujo completo. En la primera ejecución real, Testing rechazó dos veces a Develop (un enlace a una página que aún no existía y un selector CSS roto) y Develop lo corrigió: el bucle funciona.
 - Viendo esa ejecución ajusté el prompt del Orquestador para que cree los archivos antes de enlazarlos.
 
+### Fase 3 – La pantalla
+- Antes de programar, Claude Code propuso un plan de diseño: en vez de un kanban, cada tarea es una pista (Pendiente → Develop → Testing → Aprobada) en la que se ve al marcador volver a Develop cuando Testing rechaza. Cada agente tiene su color en toda la interfaz.
+- Datos en directo con Supabase Realtime; el navegador va pidiendo el siguiente paso al servidor y, si el modelo está saturado, muestra la cuenta atrás del reintento.
+- Vista previa de la web generada en un iframe con `sandbox` sin `allow-same-origin`: el código que escribe la IA no puede leer la sesión del usuario.
+- Para verificar la interfaz, Claude Code abrió la app en un navegador sin ventana (Playwright con Edge), hizo capturas en escritorio, móvil y modo oscuro, y las revisó. Así encontró y corrigió: contraste bajo en modo oscuro, la barra lateral empujando el contenido en el móvil y un fallo real del motor (si Develop no proponía cambios porque la web ya cumplía la tarea, se paraba toda la petición).
+
 <!-- Sigue añadiendo aquí: qué pediste, qué corregiste tú, qué decidiste. -->

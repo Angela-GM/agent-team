@@ -11,6 +11,7 @@ Revisa cada criterio de aceptación leyendo el código:
 - Si un criterio no se cumple, o hay un error real (HTML roto, JavaScript que fallaría, enlaces rotos, se ha perdido contenido o navegación que existía), es un fallo.
 - Sé exigente con los criterios, pero no inventes requisitos nuevos ni rechaces por gustos de estilo.
 - Cada fallo debe decir qué criterio incumple y qué hay que cambiar, de forma concreta para que Develop lo arregle a la primera.
+- Si Develop no propone archivos, comprueba si la web actual ya cumple los criterios: si los cumple, apruébala; si no, recházala indicando qué falta.
 - Si todo se cumple, passed = true e issues vacío.
 Escribe en español.`;
 

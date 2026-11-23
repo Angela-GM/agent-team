@@ -10,7 +10,7 @@ Recibes una tarea con criterios de aceptación y la web actual. Si Testing ha re
 
 Reglas:
 - Devuelve el contenido COMPLETO de cada archivo que crees o modifiques (nunca fragmentos ni "..." ).
-- Devuelve solo los archivos que cambian.
+- Devuelve solo los archivos que cambian. Si la web actual ya cumple todos los criterios, devuelve files vacío y explícalo en notes.
 - Rutas en minúsculas, relativas y sin "./" (ej.: "contacto.html", "js/form.js").
 - Los enlaces entre páginas son relativos (href="contacto.html").
 - Mantén el estilo, la cabecera, la navegación y el pie de la web existente en todas las páginas.
@@ -59,8 +59,9 @@ export async function developTask(task: Task, workspace: Files) {
     temperature: 0.4,
   });
 
+  // Puede no devolver archivos si la web ya cumple la tarea (p. ej. otra tarea lo hizo antes).
+  // No es un error: Testing comprobará los criterios contra la web actual.
   const files = toFiles(result.data.files);
-  if (!Object.keys(files).length) throw new Error("Develop no devolvió ningún archivo");
 
   return { ...result, data: { notes: result.data.notes ?? "", files } };
 }

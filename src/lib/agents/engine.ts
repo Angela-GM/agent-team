@@ -70,6 +70,8 @@ export async function step(db: Db, runId: string): Promise<StepResult> {
 
     const message = err instanceof Error ? err.message : String(err);
     await log(db, runId, taskId, agent, "error", `Error inesperado: ${message}`);
+    // No dejar la tarea en curso colgada en "en desarrollo" o "en testing".
+    if (taskId) await db.from("tasks").update({ status: "failed", agent: null }).eq("id", taskId);
     await db.from("runs").update({ status: "failed", error: message }).eq("id", runId);
     return { state: "done", runStatus: "failed" };
   } finally {
@@ -139,7 +141,9 @@ async function develop(db: Db, run: Run, task: Task, tasks: Task[]) {
   const { data, model, ms } = await developTask(task, run.files);
 
   await updateTask(db, task.id, { status: "testing", agent: "tester", attempts: attempt, files: data.files });
-  await log(db, run.id, task.id, "developer", "output", data.notes || "Cambios listos para revisar.", {
+  const changed = Object.keys(data.files).length;
+  const fallback = changed ? "Cambios listos para revisar." : "No hace falta cambiar archivos: la web ya cumple la tarea.";
+  await log(db, run.id, task.id, "developer", "output", data.notes || fallback, {
     model,
     ms,
     attempt,

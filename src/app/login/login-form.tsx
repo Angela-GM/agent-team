@@ -6,7 +6,7 @@ import { login, type LoginState } from "./actions";
 const initialState: LoginState = { error: null };
 
 const inputClass =
-  "rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100";
+  "rounded-lg border border-line bg-surface px-3 py-2 text-ink outline-none focus:border-orchestrator";
 
 export function LoginForm({ demoEmail }: { demoEmail?: string }) {
   const [state, formAction, pending] = useActionState(login, initialState);
@@ -36,7 +36,7 @@ export function LoginForm({ demoEmail }: { demoEmail?: string }) {
       </label>
 
       {state.error && (
-        <p role="alert" className="text-sm text-red-600 dark:text-red-400">
+        <p role="alert" className="text-sm text-fail">
           {state.error}
         </p>
       )}
@@ -44,7 +44,7 @@ export function LoginForm({ demoEmail }: { demoEmail?: string }) {
       <button
         type="submit"
         disabled={pending}
-        className="rounded-lg bg-indigo-600 px-4 py-2 font-medium text-white transition hover:bg-indigo-500 disabled:opacity-60"
+        className="rounded-lg bg-orchestrator px-4 py-2 font-semibold text-surface hover:opacity-90 disabled:opacity-60"
       >
         {pending ? "Entrando…" : "Entrar"}
       </button>
