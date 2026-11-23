@@ -5,6 +5,8 @@
 import { createClient } from "@supabase/supabase-js";
 
 const BASE = process.env.BASE_URL ?? "http://localhost:3000";
+const EMAIL = process.env.E2E_EMAIL ?? process.env.NEXT_PUBLIC_DEMO_EMAIL;
+const PASSWORD = process.env.E2E_PASSWORD ?? process.env.DEMO_PASSWORD;
 const request = process.argv[2] ?? "Añade una página de contacto a esta web";
 
 // --- Login a través del formulario real (envío HTML sin JavaScript) ---
@@ -27,8 +29,8 @@ for (const m of html.matchAll(/<input[^>]*type="hidden"[^>]*>/g)) {
   const value = m[0].match(/value="([^"]*)"/)?.[1] ?? "";
   if (name) form.append(name, value.replace(/&quot;/g, '"').replace(/&amp;/g, "&"));
 }
-form.append("email", process.env.NEXT_PUBLIC_DEMO_EMAIL);
-form.append("password", process.env.DEMO_PASSWORD);
+form.append("email", EMAIL);
+form.append("password", PASSWORD);
 const login = await fetch(`${BASE}/login`, { method: "POST", body: form, redirect: "manual" });
 store(login);
 if (login.status !== 303) throw new Error(`Login falló (${login.status})`);
@@ -50,7 +52,7 @@ const api = async (path, body) => {
 const db = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY, {
   auth: { persistSession: false },
 });
-await db.auth.signInWithPassword({ email: process.env.NEXT_PUBLIC_DEMO_EMAIL, password: process.env.DEMO_PASSWORD });
+await db.auth.signInWithPassword({ email: EMAIL, password: PASSWORD });
 
 const ICON = { orchestrator: "🧭 Orquestador", developer: "🛠️  Develop    ", tester: "🧪 Testing    " };
 let lastEvent = 0;

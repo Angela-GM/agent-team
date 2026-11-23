@@ -10,7 +10,7 @@ import {
 const API = "https://api.groq.com/openai/v1/chat/completions";
 
 export function createGroqProvider(apiKey: string): LlmProvider {
-  const model = process.env.GROQ_MODEL ?? "llama-3.3-70b-versatile";
+  const model = process.env.GROQ_MODEL ?? "openai/gpt-oss-120b";
 
   return {
     name: "groq",
