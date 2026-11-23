@@ -25,7 +25,8 @@ type Db = SupabaseClient;
 export const MAX_ATTEMPTS = 5;
 
 export async function step(db: Db, runId: string): Promise<StepResult> {
-  const { data: claimed, error: claimError } = await db.rpc("claim_run_step", { p_run_id: runId });
+  // El bloqueo dura más que el paso más largo posible (maxDuration = 120 s).
+  const { data: claimed, error: claimError } = await db.rpc("claim_run_step", { p_run_id: runId, p_seconds: 150 });
   if (claimError) throw claimError;
 
   if (!claimed) {

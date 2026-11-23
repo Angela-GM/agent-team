@@ -1,7 +1,7 @@
 import "server-only";
 import { createGeminiProvider } from "./gemini";
 import { createGroqProvider } from "./groq";
-import { LlmUnavailableError, type GenerateJsonInput, type LlmProvider } from "./types";
+import { LLM_BUDGET_MS, LlmUnavailableError, type GenerateJsonInput, type LlmProvider } from "./types";
 
 export * from "./types";
 
@@ -32,9 +32,10 @@ export function getLlm(): LlmProvider {
     name: chain.map((p) => p.name).join("+"),
     async generateJson<T>(input: GenerateJsonInput) {
       const errors: string[] = [];
+      const withDeadline = { ...input, deadline: input.deadline ?? Date.now() + LLM_BUDGET_MS };
       for (const provider of chain) {
         try {
-          return await provider.generateJson<T>(input);
+          return await provider.generateJson<T>(withDeadline);
         } catch (err) {
           if (!(err instanceof LlmUnavailableError)) throw err;
           errors.push(err.message);

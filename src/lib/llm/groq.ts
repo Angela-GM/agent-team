@@ -1,5 +1,7 @@
 import "server-only";
 import {
+  MIN_CALL_MS,
+  remaining,
   LlmUnavailableError,
   type GenerateJsonInput,
   type GenerateJsonResult,
@@ -16,12 +18,14 @@ export function createGroqProvider(apiKey: string): LlmProvider {
     name: "groq",
     async generateJson<T>(input: GenerateJsonInput): Promise<GenerateJsonResult<T>> {
       const started = Date.now();
+      const timeout = Math.min(45_000, remaining(input));
+      if (timeout < MIN_CALL_MS) throw new LlmUnavailableError(`groq ${model}: sin tiempo`);
       let res: Response;
       try {
         res = await fetch(API, {
           method: "POST",
           headers: { authorization: `Bearer ${apiKey}`, "content-type": "application/json" },
-          signal: AbortSignal.timeout(45_000),
+          signal: AbortSignal.timeout(timeout),
           body: JSON.stringify({
             model,
             temperature: input.temperature ?? 0.4,

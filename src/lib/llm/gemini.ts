@@ -1,5 +1,7 @@
 import "server-only";
 import {
+  MIN_CALL_MS,
+  remaining,
   LlmUnavailableError,
   type GenerateJsonInput,
   type GenerateJsonResult,
@@ -10,7 +12,7 @@ const API = "https://generativelanguage.googleapis.com/v1beta/models";
 
 // Si un modelo está saturado (503) o sin cuota (429) se prueba el siguiente.
 const DEFAULT_MODELS = ["gemini-3.5-flash", "gemini-flash-latest", "gemini-flash-lite-latest"];
-const TIMEOUT_MS = 45_000;
+const TIMEOUT_MS = 60_000;
 
 type GeminiResponse = {
   candidates?: { content?: { parts?: { text?: string }[] }; finishReason?: string }[];
@@ -31,12 +33,17 @@ export function createGeminiProvider(apiKey: string): LlmProvider {
 
       for (const model of chain) {
         const started = Date.now();
+        const timeout = Math.min(TIMEOUT_MS, remaining(input));
+        if (timeout < MIN_CALL_MS) {
+          errors.push(`${model}: sin tiempo`);
+          break;
+        }
         let res: Response;
         try {
           res = await fetch(`${API}/${model}:generateContent`, {
             method: "POST",
             headers: { "x-goog-api-key": apiKey, "content-type": "application/json" },
-            signal: AbortSignal.timeout(TIMEOUT_MS),
+            signal: AbortSignal.timeout(timeout),
             body: JSON.stringify({
               systemInstruction: { parts: [{ text: input.system }] },
               contents: [{ role: "user", parts: [{ text: input.prompt }] }],

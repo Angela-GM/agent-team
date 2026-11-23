@@ -54,7 +54,7 @@ Todas las tablas tienen RLS: cada usuario solo ve sus propias ejecuciones. El se
 - **«Hasta que todo pasa».** El bucle Develop ↔ Testing se repite hasta que Testing aprueba, con un tope de 5 intentos por tarea para que un rechazo infinito no agote la cuota del modelo. Si se alcanza, la tarea queda como fallida y el equipo sigue con la siguiente.
 - **El reparto.** El Orquestador asigna cada tarea a Develop, pasa el resultado a Testing y, si hay fallos, devuelve la tarea a Develop. Todo queda en el registro.
 - **Coste cero.** Gemini en plan gratuito, con varios modelos en cadena por si uno está saturado y Groq como respaldo opcional. Límite de 50 peticiones al día por usuario.
-- **El bucle avanza desde el navegador.** La página pide el siguiente paso al servidor; cada paso dura menos de 60 s (límite de Vercel gratis). Si se cierra la pestaña, la petición se pausa y continúa al volver a abrirla.
+- **El bucle avanza desde el navegador.** La página pide el siguiente paso al servidor; cada paso tiene un presupuesto de 100 s para el modelo y la función un máximo de 120 s (dentro del plan gratuito de Vercel). Si se cierra la pestaña, la petición se pausa y continúa al volver a abrirla.
 
 ## Cómo se ha construido con Claude Code
 

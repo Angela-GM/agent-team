@@ -13,7 +13,18 @@ export type GenerateJsonInput = {
   prompt: string;
   schema: JsonSchema;
   temperature?: number;
+  /** Momento (ms) a partir del cual no se debe empezar otra llamada. Lo fija getLlm(). */
+  deadline?: number;
 };
+
+// Presupuesto de un paso: la función de Vercel tiene maxDuration = 120 s; dejamos
+// margen para guardar en la base de datos. Ninguna cadena de modelos lo supera.
+export const LLM_BUDGET_MS = 100_000;
+export const MIN_CALL_MS = 8_000;
+
+export function remaining(input: GenerateJsonInput) {
+  return (input.deadline ?? Date.now() + LLM_BUDGET_MS) - Date.now();
+}
 
 export type GenerateJsonResult<T> = {
   data: T;
