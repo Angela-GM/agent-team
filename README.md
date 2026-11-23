@@ -4,7 +4,7 @@ Un equipo de 3 agentes de IA que trabajan juntos:
 
 1. **Orquestador**: recibe una petición (p. ej. «añade una página de contacto»), la divide en tareas y las reparte.
 2. **Develop**: hace cada tarea y genera el código.
-3. **Testing**: revisa lo que ha hecho Develop y devuelve lo que falla, hasta que todo pasa (máx. 3 intentos por tarea).
+3. **Testing**: revisa lo que ha hecho Develop y devuelve lo que falla, hasta que todo pasa (máx. 5 intentos por tarea).
 
 En pantalla se ve qué hace cada agente y en qué estado está cada tarea, en directo.
 
@@ -46,6 +46,15 @@ Todas las tablas tienen RLS: cada usuario solo ve sus propias ejecuciones. El se
 
 - Ninguna clave está en el repositorio (`.env*` está en `.gitignore`; solo se sube `.env.example`).
 - `SUPABASE_SERVICE_ROLE_KEY` solo se usa en local para crear el usuario de prueba. No va a Vercel.
+
+## Decisiones sobre lo que el enunciado deja abierto
+
+- **«Esta web».** El enunciado no dice sobre qué web trabajan los agentes. He elegido una web de ejemplo (una panadería, HTML/CSS/JS) para que el resultado se vea y se pueda navegar en la propia app. Cada petición parte de cómo dejó la web la anterior, como en un proyecto real; se puede volver a la web original en cualquier momento. La arquitectura no depende de esto: cambiar el tipo de proyecto es cambiar los prompts y las comprobaciones de Testing.
+- **Qué comprueba Testing.** Combina comprobaciones automáticas sin IA (estructura HTML, enlaces rotos, etiquetas de formularios, sintaxis de JavaScript) con una revisión del modelo contra los criterios de aceptación que fija el Orquestador. No ejecuta la web en un navegador: en el plan gratuito de Vercel no es viable.
+- **«Hasta que todo pasa».** El bucle Develop ↔ Testing se repite hasta que Testing aprueba, con un tope de 5 intentos por tarea para que un rechazo infinito no agote la cuota del modelo. Si se alcanza, la tarea queda como fallida y el equipo sigue con la siguiente.
+- **El reparto.** El Orquestador asigna cada tarea a Develop, pasa el resultado a Testing y, si hay fallos, devuelve la tarea a Develop. Todo queda en el registro.
+- **Coste cero.** Gemini en plan gratuito, con varios modelos en cadena por si uno está saturado y Groq como respaldo opcional. Límite de 50 peticiones al día por usuario.
+- **El bucle avanza desde el navegador.** La página pide el siguiente paso al servidor; cada paso dura menos de 60 s (límite de Vercel gratis). Si se cierra la pestaña, la petición se pausa y continúa al volver a abrirla.
 
 ## Cómo se ha construido con Claude Code
 

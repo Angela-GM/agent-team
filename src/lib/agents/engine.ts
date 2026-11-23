@@ -20,6 +20,10 @@ export type StepResult =
 
 type Db = SupabaseClient;
 
+// «Hasta que todo pasa», con un tope: si Testing nunca aprueba, el bucle no puede
+// gastar la cuota del modelo sin fin. Tras 5 intentos la tarea se marca como fallida.
+export const MAX_ATTEMPTS = 5;
+
 export async function step(db: Db, runId: string): Promise<StepResult> {
   const { data: claimed, error: claimError } = await db.rpc("claim_run_step", { p_run_id: runId });
   if (claimError) throw claimError;
@@ -93,6 +97,7 @@ async function plan(db: Db, run: Run) {
     description: t.description,
     acceptance: t.acceptance,
     status: "pending",
+    max_attempts: MAX_ATTEMPTS,
   }));
   const { error } = await db.from("tasks").insert(rows);
   if (error) throw error;
@@ -154,6 +159,8 @@ async function develop(db: Db, run: Run, task: Task, tasks: Task[]) {
 // ---------- Testing ----------
 
 async function test(db: Db, run: Run, task: Task) {
+  // El Orquestador reparte el trabajo a los dos: también es quien pasa la tarea a Testing.
+  await log(db, run.id, task.id, "orchestrator", "info", `Pasa «${task.title}» a Testing para que la revise.`);
   await log(db, run.id, task.id, "tester", "thinking", `Revisando «${task.title}» (intento ${task.attempts}/${task.max_attempts})…`);
 
   const { data, model, ms } = await testTask(task, run.files);
@@ -178,7 +185,15 @@ async function test(db: Db, run: Run, task: Task) {
   }
 
   await updateTask(db, task.id, { status: "developing", agent: "developer", feedback });
-  await log(db, run.id, task.id, "tester", "output", `Rechazada: ${data.issues.length} fallo(s). Se devuelve a Develop.`, meta);
+  await log(db, run.id, task.id, "tester", "output", `Rechazada: ${data.issues.length} fallo(s).`, meta);
+  await log(
+    db,
+    run.id,
+    task.id,
+    "orchestrator",
+    "info",
+    `Devuelve «${task.title}» a Develop con los fallos de Testing (quedan ${task.max_attempts - task.attempts} intento(s)).`,
+  );
 }
 
 // ---------- Utilidades ----------

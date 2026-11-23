@@ -4,7 +4,7 @@ import { STARTER_SITE } from "@/lib/agents/starter-site";
 import { createClient } from "@/lib/supabase/server";
 
 // Límite para proteger la cuota gratuita del modelo.
-const MAX_RUNS_PER_DAY = 20;
+const MAX_RUNS_PER_DAY = 50;
 
 // Crea una petición nueva. Los agentes se ponen en marcha llamando a /api/runs/[id]/step.
 export async function POST(req: NextRequest) {
